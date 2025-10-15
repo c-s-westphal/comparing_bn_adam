@@ -503,33 +503,34 @@ def main():
         # Step scheduler
         scheduler.step()
 
-        # Evaluate accuracy
-        test_acc = evaluate_accuracy(model, test_loader, device)
-        gen_gap = train_acc - test_acc
-
-        # Print progress
+        # Evaluate MI and accuracy only at specified intervals
         if epoch % args.eval_interval == 0 or epoch == 1 or epoch == args.epochs:
+            # Evaluate accuracy
+            test_acc = evaluate_accuracy(model, test_loader, device)
+            gen_gap = train_acc - test_acc
+
+            # Print progress
             print(f"Epoch {epoch}/{args.epochs}: "
                   f"Train Acc: {train_acc:.2f}%, "
                   f"Test Acc: {test_acc:.2f}%, "
                   f"Gen Gap: {gen_gap:.2f}%")
 
-        # Evaluate MI at specified intervals
-        if epoch % args.eval_interval == 0 or epoch == 1:
-            print(f"  Evaluating MI (n_masks={args.n_masks_train}, max_batches={args.max_eval_batches_train})...")
-            mi_full, mean_mi_masked, mi_diff = evaluate_first_layer_mi(
-                model, eval_loader, device,
-                n_subsets=args.n_masks_train,
-                seed=args.seed + epoch,  # Different seed each time
-                max_batches=args.max_eval_batches_train
-            )
-            print(f"  MI: {mi_full:.6f}, MI_masked: {mean_mi_masked:.6f}, MI_diff: {mi_diff:.6f}")
+            # Evaluate MI (skip at final epoch since we do comprehensive MI eval after loop)
+            if epoch != args.epochs:
+                print(f"  Evaluating MI (n_masks={args.n_masks_train}, max_batches={args.max_eval_batches_train})...")
+                mi_full, mean_mi_masked, mi_diff = evaluate_first_layer_mi(
+                    model, eval_loader, device,
+                    n_subsets=args.n_masks_train,
+                    seed=args.seed + epoch,  # Different seed each time
+                    max_batches=args.max_eval_batches_train
+                )
+                print(f"  MI: {mi_full:.6f}, MI_masked: {mean_mi_masked:.6f}, MI_diff: {mi_diff:.6f}")
 
-            mi_history.append(mi_diff)
-            train_acc_history.append(train_acc)
-            test_acc_history.append(test_acc)
-            gen_gap_history.append(gen_gap)
-            epochs_evaluated.append(epoch)
+                mi_history.append(mi_diff)
+                train_acc_history.append(train_acc)
+                test_acc_history.append(test_acc)
+                gen_gap_history.append(gen_gap)
+                epochs_evaluated.append(epoch)
 
     print("\n" + "="*70)
     print("Training completed!")

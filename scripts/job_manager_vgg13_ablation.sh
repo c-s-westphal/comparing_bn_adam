@@ -87,7 +87,7 @@ else
         --batchnorm "$batchnorm" \
         --augmentation "$augmentation" \
         --dropout "$dropout" \
-        --epochs 200 \
+        --epochs 500 \
         --batch_size 128 \
         --lr 0.001 \
         --weight_decay 5e-4 \

@@ -62,18 +62,42 @@ def load_results(results_dir: Path, architecture: str):
             print(f"Warning: Could not parse optimizer from {filename}")
             continue
 
-        # Parse batchnorm and augmentation from remainder
-        if remainder.startswith('no_bn_'):
+        # Parse batchnorm, augmentation, and dropout from remainder
+        # Format: {batchnorm}_{augmentation}_{dropout}
+        parts = remainder.split('_')
+
+        # Reconstruct batchnorm (could be 'bn' or 'no_bn')
+        if parts[0] == 'no' and len(parts) > 1 and parts[1] == 'bn':
             batchnorm = 'no_bn'
-            augmentation = remainder[6:]  # Everything after 'no_bn_'
-        elif remainder.startswith('bn_'):
+            remaining_parts = parts[2:]
+        elif parts[0] == 'bn':
             batchnorm = 'bn'
-            augmentation = remainder[3:]  # Everything after 'bn_'
+            remaining_parts = parts[1:]
         else:
             print(f"Warning: Could not parse batchnorm from {filename}")
             continue
 
-        ablation_name = f"{optimizer}_{batchnorm}_{augmentation}"
+        # Reconstruct augmentation (could be 'aug' or 'no_aug')
+        if remaining_parts[0] == 'no' and len(remaining_parts) > 1 and remaining_parts[1] == 'aug':
+            augmentation = 'no_aug'
+            remaining_parts = remaining_parts[2:]
+        elif remaining_parts[0] == 'aug':
+            augmentation = 'aug'
+            remaining_parts = remaining_parts[1:]
+        else:
+            print(f"Warning: Could not parse augmentation from {filename}")
+            continue
+
+        # Reconstruct dropout (could be 'dropout' or 'no_dropout')
+        if remaining_parts[0] == 'no' and len(remaining_parts) > 1 and remaining_parts[1] == 'dropout':
+            dropout = 'no_dropout'
+        elif remaining_parts[0] == 'dropout':
+            dropout = 'dropout'
+        else:
+            print(f"Warning: Could not parse dropout from {filename}")
+            continue
+
+        ablation_name = f"{optimizer}_{batchnorm}_{augmentation}_{dropout}"
 
         # Extract values
         gen_gap = float(data['final_gen_gap'])
@@ -85,7 +109,8 @@ def load_results(results_dir: Path, architecture: str):
             'seed': int(seed),
             'optimizer': optimizer,
             'batchnorm': batchnorm,
-            'augmentation': augmentation
+            'augmentation': augmentation,
+            'dropout': dropout
         })
 
     return results
@@ -99,10 +124,10 @@ def plot_mi_vs_gen_gap(results, architecture: str, output_dir: Path):
         architecture: Architecture name for title
         output_dir: Directory to save the plot
     """
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(14, 10))
 
     # Define colors and markers for different ablations
-    # We have 8 ablations: 2 optimizers × 2 batchnorm × 2 augmentation
+    # We have 16 ablations: 2 optimizers × 2 batchnorm × 2 augmentation × 2 dropout
     colors = {
         'adam': '#e74c3c',      # Red
         'adamw': '#3498db',     # Blue
@@ -113,6 +138,12 @@ def plot_mi_vs_gen_gap(results, architecture: str, output_dir: Path):
         'bn_no_aug': 's',       # Square
         'no_bn_aug': '^',       # Triangle up
         'no_bn_no_aug': 'D',    # Diamond
+    }
+
+    # Use different marker sizes for dropout
+    sizes = {
+        'dropout': 200,         # Larger for dropout
+        'no_dropout': 100,      # Smaller for no dropout
     }
 
     labels_added = set()
@@ -136,17 +167,20 @@ def plot_mi_vs_gen_gap(results, architecture: str, output_dir: Path):
         optimizer = data_points[0]['optimizer']
         batchnorm = data_points[0]['batchnorm']
         augmentation = data_points[0]['augmentation']
+        dropout = data_points[0]['dropout']
 
         color = colors[optimizer]
         marker_key = f"{batchnorm}_{augmentation}"
         marker = markers[marker_key]
+        size = sizes[dropout]
 
         # Create label
-        label = f"{optimizer.upper()}, {batchnorm.replace('_', ' ').title()}, {augmentation.replace('_', ' ').title()}"
+        dropout_label = "Dropout" if dropout == "dropout" else "No Dropout"
+        label = f"{optimizer.upper()}, {batchnorm.replace('_', ' ').title()}, {augmentation.replace('_', ' ').title()}, {dropout_label}"
 
         # Plot
         ax.scatter(gen_gaps, y_values,
-                  c=color, marker=marker, s=150, alpha=0.7,
+                  c=color, marker=marker, s=size, alpha=0.6,
                   edgecolors='black', linewidths=1.5,
                   label=label)
 
@@ -204,7 +238,7 @@ def main():
     )
 
     parser.add_argument('--arch', type=str, default='vgg11',
-                       choices=['vgg11', 'vgg13', 'vgg16', 'vgg19'],
+                       choices=['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19'],
                        help='Architecture to plot (default: vgg11)')
     parser.add_argument('--results_dir', type=str, default='./results',
                        help='Directory containing result files')

@@ -19,7 +19,7 @@ from torchvision import datasets, transforms
 import numpy as np
 from sklearn.metrics import mutual_info_score
 
-from models.vgg_standard import VGG11, VGG13, VGG16, VGG19
+from models.vgg_standard import VGG9, VGG11, VGG13, VGG16, VGG19
 
 
 def get_data_loaders(
@@ -372,7 +372,7 @@ def main():
 
     # Model arguments
     parser.add_argument('--arch', type=str, required=True,
-                        choices=['vgg11', 'vgg13', 'vgg16', 'vgg19'],
+                        choices=['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19'],
                         help='Model architecture')
     parser.add_argument('--seed', type=int, required=True,
                         help='Random seed')
@@ -387,6 +387,9 @@ def main():
     parser.add_argument('--augmentation', type=str, required=True,
                         choices=['aug', 'no_aug'],
                         help='Whether to use data augmentation')
+    parser.add_argument('--dropout', type=str, required=True,
+                        choices=['dropout', 'no_dropout'],
+                        help='Whether to use dropout in classifier')
 
     # Training arguments
     parser.add_argument('--epochs', type=int, default=200,
@@ -439,20 +442,23 @@ def main():
     # Parse ablation flags
     use_batchnorm = (args.batchnorm == 'bn')
     use_augmentation = (args.augmentation == 'aug')
+    use_dropout = (args.dropout == 'dropout')
 
     # Create model
     model_map = {
+        'vgg9': VGG9,
         'vgg11': VGG11,
         'vgg13': VGG13,
         'vgg16': VGG16,
         'vgg19': VGG19
     }
-    model = model_map[args.arch](num_classes=10, use_batchnorm=use_batchnorm)
+    model = model_map[args.arch](num_classes=10, use_batchnorm=use_batchnorm, use_dropout=use_dropout)
     model = model.to(device)
 
     print(f"\nModel: {args.arch.upper()}")
     print(f"Batch Normalization: {use_batchnorm}")
     print(f"Data Augmentation: {use_augmentation}")
+    print(f"Dropout: {use_dropout}")
     print(f"Optimizer: {args.optimizer.upper()}")
     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
@@ -552,7 +558,7 @@ def main():
     checkpoint_dir = Path(args.checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    ablation_name = f"{args.optimizer}_{args.batchnorm}_{args.augmentation}"
+    ablation_name = f"{args.optimizer}_{args.batchnorm}_{args.augmentation}_{args.dropout}"
     checkpoint_path = checkpoint_dir / f"{args.arch}_{ablation_name}_seed{args.seed}_final.pt"
 
     torch.save({
@@ -563,6 +569,7 @@ def main():
         'seed': args.seed,
         'use_batchnorm': use_batchnorm,
         'use_augmentation': use_augmentation,
+        'use_dropout': use_dropout,
         'optimizer_name': args.optimizer,
         'train_acc': train_acc_history[-1] if train_acc_history else train_acc,
         'test_acc': test_acc_history[-1] if test_acc_history else test_acc,
@@ -594,6 +601,7 @@ def main():
         seed=args.seed,
         use_batchnorm=use_batchnorm,
         use_augmentation=use_augmentation,
+        use_dropout=use_dropout,
         optimizer=args.optimizer,
     )
 
@@ -608,6 +616,7 @@ def main():
             'optimizer': args.optimizer,
             'use_batchnorm': use_batchnorm,
             'use_augmentation': use_augmentation,
+            'use_dropout': use_dropout,
             'epochs': args.epochs,
             'final_train_acc': float(train_acc),
             'final_test_acc': float(test_acc),

@@ -1,24 +1,48 @@
-vgg16 0 adam no_bn no_aug
-vgg16 0 adam no_bn aug
-vgg16 0 adam bn no_aug
-vgg16 0 adam bn aug
-vgg16 0 adamw no_bn no_aug
-vgg16 0 adamw no_bn aug
-vgg16 0 adamw bn no_aug
-vgg16 0 adamw bn aug
-vgg16 1 adam no_bn no_aug
-vgg16 1 adam no_bn aug
-vgg16 1 adam bn no_aug
-vgg16 1 adam bn aug
-vgg16 1 adamw no_bn no_aug
-vgg16 1 adamw no_bn aug
-vgg16 1 adamw bn no_aug
-vgg16 1 adamw bn aug
-vgg16 2 adam no_bn no_aug
-vgg16 2 adam no_bn aug
-vgg16 2 adam bn no_aug
-vgg16 2 adam bn aug
-vgg16 2 adamw no_bn no_aug
-vgg16 2 adamw no_bn aug
-vgg16 2 adamw bn no_aug
-vgg16 2 adamw bn aug
+vgg16 0 adam bn aug dropout
+vgg16 0 adam bn aug no_dropout
+vgg16 0 adam bn no_aug dropout
+vgg16 0 adam bn no_aug no_dropout
+vgg16 0 adam no_bn aug dropout
+vgg16 0 adam no_bn aug no_dropout
+vgg16 0 adam no_bn no_aug dropout
+vgg16 0 adam no_bn no_aug no_dropout
+vgg16 0 adamw bn aug dropout
+vgg16 0 adamw bn aug no_dropout
+vgg16 0 adamw bn no_aug dropout
+vgg16 0 adamw bn no_aug no_dropout
+vgg16 0 adamw no_bn aug dropout
+vgg16 0 adamw no_bn aug no_dropout
+vgg16 0 adamw no_bn no_aug dropout
+vgg16 0 adamw no_bn no_aug no_dropout
+vgg16 1 adam bn aug dropout
+vgg16 1 adam bn aug no_dropout
+vgg16 1 adam bn no_aug dropout
+vgg16 1 adam bn no_aug no_dropout
+vgg16 1 adam no_bn aug dropout
+vgg16 1 adam no_bn aug no_dropout
+vgg16 1 adam no_bn no_aug dropout
+vgg16 1 adam no_bn no_aug no_dropout
+vgg16 1 adamw bn aug dropout
+vgg16 1 adamw bn aug no_dropout
+vgg16 1 adamw bn no_aug dropout
+vgg16 1 adamw bn no_aug no_dropout
+vgg16 1 adamw no_bn aug dropout
+vgg16 1 adamw no_bn aug no_dropout
+vgg16 1 adamw no_bn no_aug dropout
+vgg16 1 adamw no_bn no_aug no_dropout
+vgg16 2 adam bn aug dropout
+vgg16 2 adam bn aug no_dropout
+vgg16 2 adam bn no_aug dropout
+vgg16 2 adam bn no_aug no_dropout
+vgg16 2 adam no_bn aug dropout
+vgg16 2 adam no_bn aug no_dropout
+vgg16 2 adam no_bn no_aug dropout
+vgg16 2 adam no_bn no_aug no_dropout
+vgg16 2 adamw bn aug dropout
+vgg16 2 adamw bn aug no_dropout
+vgg16 2 adamw bn no_aug dropout
+vgg16 2 adamw bn no_aug no_dropout
+vgg16 2 adamw no_bn aug dropout
+vgg16 2 adamw no_bn aug no_dropout
+vgg16 2 adamw no_bn no_aug dropout
+vgg16 2 adamw no_bn no_aug no_dropout

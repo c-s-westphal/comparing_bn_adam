@@ -12,6 +12,7 @@ import torch.nn as nn
 # VGG configurations: number of output channels for each layer
 # 'M' denotes max pooling
 cfg = {
+    'vgg9': [64, 'M', 128, 'M', 256, 256, 'M', 512, 'M', 512, 'M'],
     'vgg11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'vgg13': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'vgg16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
@@ -23,27 +24,29 @@ class VGG(nn.Module):
     """VGG model for CIFAR-10.
 
     Args:
-        arch: Architecture name ('vgg11', 'vgg13', 'vgg16', 'vgg19')
+        arch: Architecture name ('vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19')
         num_classes: Number of output classes (default: 10 for CIFAR-10)
         use_batchnorm: Whether to use batch normalization (default: True)
+        use_dropout: Whether to use dropout in classifier (default: False)
     """
-    def __init__(self, arch: str, num_classes: int = 10, use_batchnorm: bool = True):
+    def __init__(self, arch: str, num_classes: int = 10, use_batchnorm: bool = True, use_dropout: bool = False):
         super(VGG, self).__init__()
         self.arch = arch
         self.use_batchnorm = use_batchnorm
+        self.use_dropout = use_dropout
 
         self.features = self._make_layers(cfg[arch], use_batchnorm)
 
-        # Classifier adapted for CIFAR-10 (32x32 -> after 5 pooling: 1x1)
-        self.classifier = nn.Sequential(
-            nn.Linear(512, 512),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(512, 512),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(512, num_classes),
-        )
+        # Global Average Pooling + single linear classifier
+        self.pool = nn.AdaptiveAvgPool2d(1)  # GAP to 1×1
+
+        if use_dropout:
+            self.classifier = nn.Sequential(
+                nn.Dropout(0.5),
+                nn.Linear(512, num_classes)
+            )
+        else:
+            self.classifier = nn.Linear(512, num_classes)
 
         self._initialize_weights()
 
@@ -81,45 +84,56 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
+        x = self.pool(x)          # (B, 512, 1, 1)
+        x = torch.flatten(x, 1)   # (B, 512)
+        x = self.classifier(x)    # (B, num_classes)
         return x
 
 
-def VGG11(num_classes=10, use_batchnorm=True):
+def VGG9(num_classes=10, use_batchnorm=True, use_dropout=False):
+    """VGG 9-layer model."""
+    return VGG('vgg9', num_classes, use_batchnorm, use_dropout)
+
+
+def VGG11(num_classes=10, use_batchnorm=True, use_dropout=False):
     """VGG 11-layer model."""
-    return VGG('vgg11', num_classes, use_batchnorm)
+    return VGG('vgg11', num_classes, use_batchnorm, use_dropout)
 
 
-def VGG13(num_classes=10, use_batchnorm=True):
+def VGG13(num_classes=10, use_batchnorm=True, use_dropout=False):
     """VGG 13-layer model."""
-    return VGG('vgg13', num_classes, use_batchnorm)
+    return VGG('vgg13', num_classes, use_batchnorm, use_dropout)
 
 
-def VGG16(num_classes=10, use_batchnorm=True):
+def VGG16(num_classes=10, use_batchnorm=True, use_dropout=False):
     """VGG 16-layer model."""
-    return VGG('vgg16', num_classes, use_batchnorm)
+    return VGG('vgg16', num_classes, use_batchnorm, use_dropout)
 
 
-def VGG19(num_classes=10, use_batchnorm=True):
+def VGG19(num_classes=10, use_batchnorm=True, use_dropout=False):
     """VGG 19-layer model."""
-    return VGG('vgg19', num_classes, use_batchnorm)
+    return VGG('vgg19', num_classes, use_batchnorm, use_dropout)
 
 
 if __name__ == '__main__':
     # Test model creation
-    for arch_name in ['vgg11', 'vgg13', 'vgg16', 'vgg19']:
+    for arch_name in ['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19']:
         print(f"\n{arch_name.upper()}:")
 
         # With batch norm
-        model_bn = VGG(arch_name, num_classes=10, use_batchnorm=True)
+        model_bn = VGG(arch_name, num_classes=10, use_batchnorm=True, use_dropout=False)
         total_params = sum(p.numel() for p in model_bn.parameters())
         print(f"  With BN: {total_params:,} parameters")
 
         # Without batch norm
-        model_no_bn = VGG(arch_name, num_classes=10, use_batchnorm=False)
+        model_no_bn = VGG(arch_name, num_classes=10, use_batchnorm=False, use_dropout=False)
         total_params = sum(p.numel() for p in model_no_bn.parameters())
         print(f"  Without BN: {total_params:,} parameters")
+
+        # With dropout
+        model_dropout = VGG(arch_name, num_classes=10, use_batchnorm=True, use_dropout=True)
+        total_params = sum(p.numel() for p in model_dropout.parameters())
+        print(f"  With BN + Dropout: {total_params:,} parameters")
 
         # Test forward pass
         x = torch.randn(1, 3, 32, 32)

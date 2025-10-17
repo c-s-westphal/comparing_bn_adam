@@ -400,6 +400,8 @@ def main():
                         help='Initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-4,
                         help='Weight decay (for AdamW)')
+    parser.add_argument('--target_train_acc', type=float, default=99.99,
+                        help='Target train accuracy (eval mode, clean data) for early stopping')
 
     # Evaluation arguments
     parser.add_argument('--eval_interval', type=int, default=10,
@@ -497,9 +499,11 @@ def main():
     epochs_evaluated = []
 
     # Training loop
-    print(f"\nStarting training for {args.epochs} epochs...")
+    print(f"\nStarting training for up to {args.epochs} epochs...")
+    print(f"Target train accuracy (eval mode, clean data): {args.target_train_acc:.2f}%")
     print("="*70)
 
+    final_epoch = args.epochs
     for epoch in range(1, args.epochs + 1):
         # Train
         train_loss, train_acc = train_one_epoch(
@@ -509,15 +513,18 @@ def main():
         # Step scheduler
         scheduler.step()
 
+        # Evaluate train accuracy on clean data (eval mode) every epoch to check for early stopping
+        train_acc_clean = evaluate_accuracy(model, eval_loader, device)
+
         # Evaluate MI and accuracy only at specified intervals
         if epoch % args.eval_interval == 0 or epoch == 1 or epoch == args.epochs:
-            # Evaluate accuracy
+            # Evaluate test accuracy
             test_acc = evaluate_accuracy(model, test_loader, device)
-            gen_gap = train_acc - test_acc
+            gen_gap = train_acc_clean - test_acc
 
             # Print progress
             print(f"Epoch {epoch}/{args.epochs}: "
-                  f"Train Acc: {train_acc:.2f}%, "
+                  f"Train Acc (clean): {train_acc_clean:.2f}%, "
                   f"Test Acc: {test_acc:.2f}%, "
                   f"Gen Gap: {gen_gap:.2f}%")
 
@@ -533,10 +540,17 @@ def main():
                 print(f"  MI: {mi_full:.6f}, MI_masked: {mean_mi_masked:.6f}, MI_diff: {mi_diff:.6f}")
 
                 mi_history.append(mi_diff)
-                train_acc_history.append(train_acc)
+                train_acc_history.append(train_acc_clean)
                 test_acc_history.append(test_acc)
                 gen_gap_history.append(gen_gap)
                 epochs_evaluated.append(epoch)
+
+        # Check for early stopping
+        if train_acc_clean >= args.target_train_acc:
+            print(f"\n✓ Target train accuracy reached: {train_acc_clean:.4f}% >= {args.target_train_acc:.2f}%")
+            print(f"Stopping training at epoch {epoch}")
+            final_epoch = epoch
+            break
 
     print("\n" + "="*70)
     print("Training completed!")

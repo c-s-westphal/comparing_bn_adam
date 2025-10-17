@@ -6,7 +6,7 @@
 #$ -cwd
 #$ -S /bin/bash
 #$ -j y
-#$ -N vgg16_ablation
+#$ -N vgg9_ablation
 #$ -t 1-48
 set -euo pipefail
 
@@ -14,7 +14,7 @@ hostname
 date
 
 number=$SGE_TASK_ID
-paramfile="scripts/jobs_vgg16_ablation.txt"
+paramfile="scripts/jobs_vgg9_ablation.txt"
 
 # ---------------------------------------------------------------------
 # 1.  Load toolchains and activate virtual-env
@@ -102,8 +102,8 @@ else
         --device cuda
 
     date
-    echo "Training completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation, dropout=$dropout"
+    echo "Training completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation dropout=$dropout"
 fi
 
 date
-echo "Job completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation, dropout=$dropout"
+echo "Job completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation dropout=$dropout"

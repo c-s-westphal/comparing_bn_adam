@@ -7,7 +7,7 @@
 #$ -S /bin/bash
 #$ -j y
 #$ -N vgg11_ablation
-#$ -t 1-24
+#$ -t 1-48
 set -euo pipefail
 
 hostname
@@ -50,23 +50,24 @@ mkdir -p plots
 # ---------------------------------------------------------------------
 # 4.  Extract task-specific parameters
 # ---------------------------------------------------------------------
-# Format per line: <arch> <seed> <optimizer> <batchnorm> <augmentation>
+# Format per line: <arch> <seed> <optimizer> <batchnorm> <augmentation> <dropout>
 arch=$(sed -n ${number}p "$paramfile" | awk '{print $1}')
 seed=$(sed -n ${number}p "$paramfile" | awk '{print $2}')
 optimizer=$(sed -n ${number}p "$paramfile" | awk '{print $3}')
 batchnorm=$(sed -n ${number}p "$paramfile" | awk '{print $4}')
 augmentation=$(sed -n ${number}p "$paramfile" | awk '{print $5}')
+dropout=$(sed -n ${number}p "$paramfile" | awk '{print $6}')
 
-if [[ -z "$arch" || -z "$seed" || -z "$optimizer" || -z "$batchnorm" || -z "$augmentation" ]]; then
+if [[ -z "$arch" || -z "$seed" || -z "$optimizer" || -z "$batchnorm" || -z "$augmentation" || -z "$dropout" ]]; then
   echo "Invalid job line at index $number in $paramfile" >&2
   exit 1
 fi
 
 date
-echo "Running ablation job: arch=$arch, seed=$seed, optimizer=$optimizer, batchnorm=$batchnorm, augmentation=$augmentation"
+echo "Running ablation job: arch=$arch, seed=$seed, optimizer=$optimizer, batchnorm=$batchnorm, augmentation=$augmentation, dropout=$dropout"
 
 # Define expected checkpoint path for conditional training
-ablation_name="${optimizer}_${batchnorm}_${augmentation}"
+ablation_name="${optimizer}_${batchnorm}_${augmentation}_${dropout}"
 checkpoint_file="checkpoints/${arch}_${ablation_name}_seed${seed}_final.pt"
 results_file="results/${arch}_${ablation_name}_seed${seed}_results.npz"
 
@@ -85,6 +86,7 @@ else
         --optimizer "$optimizer" \
         --batchnorm "$batchnorm" \
         --augmentation "$augmentation" \
+        --dropout "$dropout" \
         --epochs 200 \
         --batch_size 128 \
         --lr 0.001 \
@@ -100,8 +102,8 @@ else
         --device cuda
 
     date
-    echo "Training completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation"
+    echo "Training completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation dropout=$dropout"
 fi
 
 date
-echo "Job completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation"
+echo "Job completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation dropout=$dropout"

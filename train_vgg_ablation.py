@@ -479,11 +479,35 @@ def main():
         data_root=args.data_dir
     )
 
-    # Setup optimizer
+    # Setup optimizer with proper weight decay exclusions
+    # Best practice: exclude BatchNorm parameters and biases from weight decay
+    decay_params = []
+    no_decay_params = []
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+
+        # Exclude BatchNorm parameters (weight/bias) and all biases from weight decay
+        if len(param.shape) == 1 or 'bn' in name or 'bias' in name:
+            no_decay_params.append(param)
+        else:
+            decay_params.append(param)
+
+    print(f"\nOptimizer parameter groups:")
+    print(f"  With weight decay: {len(decay_params)} parameters")
+    print(f"  Without weight decay (BN + biases): {len(no_decay_params)} parameters")
+
     if args.optimizer == 'adam':
-        optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=0.0)
+        optimizer = optim.Adam([
+            {'params': decay_params, 'weight_decay': 0.0},
+            {'params': no_decay_params, 'weight_decay': 0.0}
+        ], lr=args.lr)
     elif args.optimizer == 'adamw':
-        optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = optim.AdamW([
+            {'params': decay_params, 'weight_decay': args.weight_decay},
+            {'params': no_decay_params, 'weight_decay': 0.0}
+        ], lr=args.lr)
 
     # Setup learning rate scheduler (cosine annealing)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)

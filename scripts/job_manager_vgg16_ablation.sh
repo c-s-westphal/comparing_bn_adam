@@ -50,25 +50,25 @@ mkdir -p plots
 # ---------------------------------------------------------------------
 # 4.  Extract task-specific parameters
 # ---------------------------------------------------------------------
-# Format per line: <arch> <seed> <weight_decay> <batchnorm> <crop> <flip> <dropout>
+# Format per line: <arch> <seed> <weight_decay> <batchnorm> <crop> <flip> <batch_size>
 arch=$(sed -n ${number}p "$paramfile" | awk '{print $1}')
 seed=$(sed -n ${number}p "$paramfile" | awk '{print $2}')
 weight_decay=$(sed -n ${number}p "$paramfile" | awk '{print $3}')
 batchnorm=$(sed -n ${number}p "$paramfile" | awk '{print $4}')
 crop=$(sed -n ${number}p "$paramfile" | awk '{print $5}')
 flip=$(sed -n ${number}p "$paramfile" | awk '{print $6}')
-dropout=$(sed -n ${number}p "$paramfile" | awk '{print $7}')
+batch_size=$(sed -n ${number}p "$paramfile" | awk '{print $7}')
 
-if [[ -z "$arch" || -z "$seed" || -z "$weight_decay" || -z "$batchnorm" || -z "$crop" || -z "$flip" || -z "$dropout" ]]; then
+if [[ -z "$arch" || -z "$seed" || -z "$weight_decay" || -z "$batchnorm" || -z "$crop" || -z "$flip" || -z "$batch_size" ]]; then
   echo "Invalid job line at index $number in $paramfile" >&2
   exit 1
 fi
 
 date
-echo "Running ablation job: arch=$arch, seed=$seed, weight_decay=$weight_decay, batchnorm=$batchnorm, crop=$crop, flip=$flip, dropout=$dropout"
+echo "Running ablation job: arch=$arch, seed=$seed, weight_decay=$weight_decay, batchnorm=$batchnorm, crop=$crop, flip=$flip, batch_size=$batch_size"
 
 # Define expected checkpoint path for conditional training
-ablation_name="${weight_decay}_${batchnorm}_${crop}_${flip}_${dropout}"
+ablation_name="${weight_decay}_${batchnorm}_${crop}_${flip}_bs${batch_size}"
 checkpoint_file="checkpoints/${arch}_${ablation_name}_seed${seed}_final.pt"
 results_file="results/${arch}_${ablation_name}_seed${seed}_results.npz"
 
@@ -88,9 +88,8 @@ else
         --batchnorm "$batchnorm" \
         --random_crop "$crop" \
         --random_flip "$flip" \
-        --dropout "$dropout" \
+        --batch_size "$batch_size" \
         --epochs 500 \
-        --batch_size 128 \
         --lr 0.001 \
         --weight_decay 5e-4 \
         --eval_interval 10 \
@@ -104,8 +103,8 @@ else
         --device cuda
 
     date
-    echo "Training completed: arch=$arch seed=$seed weight_decay=$weight_decay batchnorm=$batchnorm crop=$crop flip=$flip dropout=$dropout"
+    echo "Training completed: arch=$arch seed=$seed weight_decay=$weight_decay batchnorm=$batchnorm crop=$crop flip=$flip batch_size=$batch_size"
 fi
 
 date
-echo "Job completed: arch=$arch seed=$seed weight_decay=$weight_decay batchnorm=$batchnorm crop=$crop flip=$flip dropout=$dropout"
+echo "Job completed: arch=$arch seed=$seed weight_decay=$weight_decay batchnorm=$batchnorm crop=$crop flip=$flip batch_size=$batch_size"

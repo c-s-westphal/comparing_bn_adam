@@ -1,48 +1,64 @@
-vgg13 0 adam bn aug dropout
-vgg13 0 adam bn aug no_dropout
-vgg13 0 adam bn no_aug dropout
-vgg13 0 adam bn no_aug no_dropout
-vgg13 0 adam no_bn aug dropout
-vgg13 0 adam no_bn aug no_dropout
-vgg13 0 adam no_bn no_aug dropout
-vgg13 0 adam no_bn no_aug no_dropout
-vgg13 0 adamw bn aug dropout
-vgg13 0 adamw bn aug no_dropout
-vgg13 0 adamw bn no_aug dropout
-vgg13 0 adamw bn no_aug no_dropout
-vgg13 0 adamw no_bn aug dropout
-vgg13 0 adamw no_bn aug no_dropout
-vgg13 0 adamw no_bn no_aug dropout
-vgg13 0 adamw no_bn no_aug no_dropout
-vgg13 1 adam bn aug dropout
-vgg13 1 adam bn aug no_dropout
-vgg13 1 adam bn no_aug dropout
-vgg13 1 adam bn no_aug no_dropout
-vgg13 1 adam no_bn aug dropout
-vgg13 1 adam no_bn aug no_dropout
-vgg13 1 adam no_bn no_aug dropout
-vgg13 1 adam no_bn no_aug no_dropout
-vgg13 1 adamw bn aug dropout
-vgg13 1 adamw bn aug no_dropout
-vgg13 1 adamw bn no_aug dropout
-vgg13 1 adamw bn no_aug no_dropout
-vgg13 1 adamw no_bn aug dropout
-vgg13 1 adamw no_bn aug no_dropout
-vgg13 1 adamw no_bn no_aug dropout
-vgg13 1 adamw no_bn no_aug no_dropout
-vgg13 2 adam bn aug dropout
-vgg13 2 adam bn aug no_dropout
-vgg13 2 adam bn no_aug dropout
-vgg13 2 adam bn no_aug no_dropout
-vgg13 2 adam no_bn aug dropout
-vgg13 2 adam no_bn aug no_dropout
-vgg13 2 adam no_bn no_aug dropout
-vgg13 2 adam no_bn no_aug no_dropout
-vgg13 2 adamw bn aug dropout
-vgg13 2 adamw bn aug no_dropout
-vgg13 2 adamw bn no_aug dropout
-vgg13 2 adamw bn no_aug no_dropout
-vgg13 2 adamw no_bn aug dropout
-vgg13 2 adamw no_bn aug no_dropout
-vgg13 2 adamw no_bn no_aug dropout
-vgg13 2 adamw no_bn no_aug no_dropout
+vgg13 0 wd bn crop flip dropout
+vgg13 0 wd bn crop flip no_dropout
+vgg13 0 wd bn crop no_flip dropout
+vgg13 0 wd bn crop no_flip no_dropout
+vgg13 0 wd bn no_crop flip dropout
+vgg13 0 wd bn no_crop flip no_dropout
+vgg13 0 wd bn no_crop no_flip dropout
+vgg13 0 wd bn no_crop no_flip no_dropout
+vgg13 0 wd no_bn crop flip dropout
+vgg13 0 wd no_bn crop flip no_dropout
+vgg13 0 wd no_bn crop no_flip dropout
+vgg13 0 wd no_bn crop no_flip no_dropout
+vgg13 0 wd no_bn no_crop flip dropout
+vgg13 0 wd no_bn no_crop flip no_dropout
+vgg13 0 wd no_bn no_crop no_flip dropout
+vgg13 0 wd no_bn no_crop no_flip no_dropout
+vgg13 0 no_wd bn crop flip dropout
+vgg13 0 no_wd bn crop flip no_dropout
+vgg13 0 no_wd bn crop no_flip dropout
+vgg13 0 no_wd bn crop no_flip no_dropout
+vgg13 0 no_wd bn no_crop flip dropout
+vgg13 0 no_wd bn no_crop flip no_dropout
+vgg13 0 no_wd bn no_crop no_flip dropout
+vgg13 0 no_wd bn no_crop no_flip no_dropout
+vgg13 0 no_wd no_bn crop flip dropout
+vgg13 0 no_wd no_bn crop flip no_dropout
+vgg13 0 no_wd no_bn crop no_flip dropout
+vgg13 0 no_wd no_bn crop no_flip no_dropout
+vgg13 0 no_wd no_bn no_crop flip dropout
+vgg13 0 no_wd no_bn no_crop flip no_dropout
+vgg13 0 no_wd no_bn no_crop no_flip dropout
+vgg13 0 no_wd no_bn no_crop no_flip no_dropout
+vgg13 1 wd bn crop flip dropout
+vgg13 1 wd bn crop flip no_dropout
+vgg13 1 wd bn crop no_flip dropout
+vgg13 1 wd bn crop no_flip no_dropout
+vgg13 1 wd bn no_crop flip dropout
+vgg13 1 wd bn no_crop flip no_dropout
+vgg13 1 wd bn no_crop no_flip dropout
+vgg13 1 wd bn no_crop no_flip no_dropout
+vgg13 1 wd no_bn crop flip dropout
+vgg13 1 wd no_bn crop flip no_dropout
+vgg13 1 wd no_bn crop no_flip dropout
+vgg13 1 wd no_bn crop no_flip no_dropout
+vgg13 1 wd no_bn no_crop flip dropout
+vgg13 1 wd no_bn no_crop flip no_dropout
+vgg13 1 wd no_bn no_crop no_flip dropout
+vgg13 1 wd no_bn no_crop no_flip no_dropout
+vgg13 1 no_wd bn crop flip dropout
+vgg13 1 no_wd bn crop flip no_dropout
+vgg13 1 no_wd bn crop no_flip dropout
+vgg13 1 no_wd bn crop no_flip no_dropout
+vgg13 1 no_wd bn no_crop flip dropout
+vgg13 1 no_wd bn no_crop flip no_dropout
+vgg13 1 no_wd bn no_crop no_flip dropout
+vgg13 1 no_wd bn no_crop no_flip no_dropout
+vgg13 1 no_wd no_bn crop flip dropout
+vgg13 1 no_wd no_bn crop flip no_dropout
+vgg13 1 no_wd no_bn crop no_flip dropout
+vgg13 1 no_wd no_bn crop no_flip no_dropout
+vgg13 1 no_wd no_bn no_crop flip dropout
+vgg13 1 no_wd no_bn no_crop flip no_dropout
+vgg13 1 no_wd no_bn no_crop no_flip dropout
+vgg13 1 no_wd no_bn no_crop no_flip no_dropout

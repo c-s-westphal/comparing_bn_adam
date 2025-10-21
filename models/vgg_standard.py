@@ -42,7 +42,7 @@ class VGG(nn.Module):
 
         if use_dropout:
             self.classifier = nn.Sequential(
-                nn.Dropout(0.5),
+                nn.Dropout(0.8),
                 nn.Linear(512, num_classes)
             )
         else:

@@ -26,7 +26,8 @@ def get_data_loaders(
     batch_size: int = 128,
     num_workers: int = 4,
     data_root: str = './data',
-    use_augmentation: bool = True
+    use_random_crop: bool = False,
+    use_random_flip: bool = False
 ) -> Tuple[DataLoader, DataLoader]:
     """Create CIFAR-10 train and test data loaders.
 
@@ -34,7 +35,8 @@ def get_data_loaders(
         batch_size: Batch size for training and testing
         num_workers: Number of data loading workers
         data_root: Root directory for CIFAR-10 data
-        use_augmentation: If True, use data augmentation for training
+        use_random_crop: If True, use random crop augmentation
+        use_random_flip: If True, use random horizontal flip augmentation
     """
     # Test transform (no augmentation)
     test_transform = transforms.Compose([
@@ -42,16 +44,16 @@ def get_data_loaders(
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
-    # Train transform
-    if use_augmentation:
-        train_transform = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-    else:
-        train_transform = test_transform
+    # Train transform - build list of transforms based on flags
+    train_transforms_list = []
+    if use_random_crop:
+        train_transforms_list.append(transforms.RandomCrop(32, padding=4))
+    if use_random_flip:
+        train_transforms_list.append(transforms.RandomHorizontalFlip())
+    train_transforms_list.append(transforms.ToTensor())
+    train_transforms_list.append(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)))
+
+    train_transform = transforms.Compose(train_transforms_list)
 
     train_dataset = datasets.CIFAR10(
         root=data_root, train=True, download=True, transform=train_transform
@@ -378,15 +380,18 @@ def main():
                         help='Random seed')
 
     # Ablation arguments
-    parser.add_argument('--optimizer', type=str, required=True,
-                        choices=['adam', 'adamw'],
-                        help='Optimizer to use')
+    parser.add_argument('--weight_decay_ablation', type=str, required=True,
+                        choices=['wd', 'no_wd'],
+                        help='Whether to use weight decay (AdamW only)')
     parser.add_argument('--batchnorm', type=str, required=True,
                         choices=['bn', 'no_bn'],
                         help='Whether to use batch normalization')
-    parser.add_argument('--augmentation', type=str, required=True,
-                        choices=['aug', 'no_aug'],
-                        help='Whether to use data augmentation')
+    parser.add_argument('--random_crop', type=str, required=True,
+                        choices=['crop', 'no_crop'],
+                        help='Whether to use random crop augmentation')
+    parser.add_argument('--random_flip', type=str, required=True,
+                        choices=['flip', 'no_flip'],
+                        help='Whether to use random horizontal flip augmentation')
     parser.add_argument('--dropout', type=str, required=True,
                         choices=['dropout', 'no_dropout'],
                         help='Whether to use dropout in classifier')
@@ -442,8 +447,10 @@ def main():
     print(f"Using device: {device}")
 
     # Parse ablation flags
+    use_weight_decay = (args.weight_decay_ablation == 'wd')
     use_batchnorm = (args.batchnorm == 'bn')
-    use_augmentation = (args.augmentation == 'aug')
+    use_random_crop = (args.random_crop == 'crop')
+    use_random_flip = (args.random_flip == 'flip')
     use_dropout = (args.dropout == 'dropout')
 
     # Create model
@@ -459,9 +466,10 @@ def main():
 
     print(f"\nModel: {args.arch.upper()}")
     print(f"Batch Normalization: {use_batchnorm}")
-    print(f"Data Augmentation: {use_augmentation}")
+    print(f"Random Crop: {use_random_crop}")
+    print(f"Random Flip: {use_random_flip}")
     print(f"Dropout: {use_dropout}")
-    print(f"Optimizer: {args.optimizer.upper()}")
+    print(f"Weight Decay: {use_weight_decay}")
     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     # Create data loaders
@@ -469,7 +477,8 @@ def main():
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         data_root=args.data_dir,
-        use_augmentation=use_augmentation
+        use_random_crop=use_random_crop,
+        use_random_flip=use_random_flip
     )
 
     # Create evaluation loader (no augmentation, no shuffle)
@@ -498,16 +507,12 @@ def main():
     print(f"  With weight decay: {len(decay_params)} parameters")
     print(f"  Without weight decay (BN + biases): {len(no_decay_params)} parameters")
 
-    if args.optimizer == 'adam':
-        optimizer = optim.Adam([
-            {'params': decay_params, 'weight_decay': 0.0},
-            {'params': no_decay_params, 'weight_decay': 0.0}
-        ], lr=args.lr)
-    elif args.optimizer == 'adamw':
-        optimizer = optim.AdamW([
-            {'params': decay_params, 'weight_decay': args.weight_decay},
-            {'params': no_decay_params, 'weight_decay': 0.0}
-        ], lr=args.lr)
+    # Always use AdamW, with weight decay controlled by ablation flag
+    weight_decay_value = args.weight_decay if use_weight_decay else 0.0
+    optimizer = optim.AdamW([
+        {'params': decay_params, 'weight_decay': weight_decay_value},
+        {'params': no_decay_params, 'weight_decay': 0.0}
+    ], lr=args.lr)
 
     # Setup learning rate scheduler (cosine annealing)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
@@ -596,7 +601,7 @@ def main():
     checkpoint_dir = Path(args.checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    ablation_name = f"{args.optimizer}_{args.batchnorm}_{args.augmentation}_{args.dropout}"
+    ablation_name = f"{args.weight_decay_ablation}_{args.batchnorm}_{args.random_crop}_{args.random_flip}_{args.dropout}"
     checkpoint_path = checkpoint_dir / f"{args.arch}_{ablation_name}_seed{args.seed}_final.pt"
 
     torch.save({
@@ -606,9 +611,10 @@ def main():
         'arch': args.arch,
         'seed': args.seed,
         'use_batchnorm': use_batchnorm,
-        'use_augmentation': use_augmentation,
+        'use_random_crop': use_random_crop,
+        'use_random_flip': use_random_flip,
         'use_dropout': use_dropout,
-        'optimizer_name': args.optimizer,
+        'use_weight_decay': use_weight_decay,
         'train_acc': train_acc_history[-1] if train_acc_history else train_acc,
         'test_acc': test_acc_history[-1] if test_acc_history else test_acc,
         'gen_gap': gen_gap_history[-1] if gen_gap_history else gen_gap,
@@ -638,9 +644,10 @@ def main():
         arch=args.arch,
         seed=args.seed,
         use_batchnorm=use_batchnorm,
-        use_augmentation=use_augmentation,
+        use_random_crop=use_random_crop,
+        use_random_flip=use_random_flip,
         use_dropout=use_dropout,
-        optimizer=args.optimizer,
+        use_weight_decay=use_weight_decay,
     )
 
     print(f"Results saved to: {results_path}")
@@ -651,9 +658,10 @@ def main():
         json.dump({
             'arch': args.arch,
             'seed': args.seed,
-            'optimizer': args.optimizer,
+            'use_weight_decay': use_weight_decay,
             'use_batchnorm': use_batchnorm,
-            'use_augmentation': use_augmentation,
+            'use_random_crop': use_random_crop,
+            'use_random_flip': use_random_flip,
             'use_dropout': use_dropout,
             'epochs': args.epochs,
             'final_train_acc': float(train_acc),

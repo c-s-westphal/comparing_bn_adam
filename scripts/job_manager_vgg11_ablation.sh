@@ -7,7 +7,7 @@
 #$ -S /bin/bash
 #$ -j y
 #$ -N vgg11_ablation
-#$ -t 1-48
+#$ -t 1-64
 set -euo pipefail
 
 hostname
@@ -50,24 +50,25 @@ mkdir -p plots
 # ---------------------------------------------------------------------
 # 4.  Extract task-specific parameters
 # ---------------------------------------------------------------------
-# Format per line: <arch> <seed> <optimizer> <batchnorm> <augmentation> <dropout>
+# Format per line: <arch> <seed> <weight_decay> <batchnorm> <crop> <flip> <dropout>
 arch=$(sed -n ${number}p "$paramfile" | awk '{print $1}')
 seed=$(sed -n ${number}p "$paramfile" | awk '{print $2}')
-optimizer=$(sed -n ${number}p "$paramfile" | awk '{print $3}')
+weight_decay=$(sed -n ${number}p "$paramfile" | awk '{print $3}')
 batchnorm=$(sed -n ${number}p "$paramfile" | awk '{print $4}')
-augmentation=$(sed -n ${number}p "$paramfile" | awk '{print $5}')
-dropout=$(sed -n ${number}p "$paramfile" | awk '{print $6}')
+crop=$(sed -n ${number}p "$paramfile" | awk '{print $5}')
+flip=$(sed -n ${number}p "$paramfile" | awk '{print $6}')
+dropout=$(sed -n ${number}p "$paramfile" | awk '{print $7}')
 
-if [[ -z "$arch" || -z "$seed" || -z "$optimizer" || -z "$batchnorm" || -z "$augmentation" || -z "$dropout" ]]; then
+if [[ -z "$arch" || -z "$seed" || -z "$weight_decay" || -z "$batchnorm" || -z "$crop" || -z "$flip" || -z "$dropout" ]]; then
   echo "Invalid job line at index $number in $paramfile" >&2
   exit 1
 fi
 
 date
-echo "Running ablation job: arch=$arch, seed=$seed, optimizer=$optimizer, batchnorm=$batchnorm, augmentation=$augmentation, dropout=$dropout"
+echo "Running ablation job: arch=$arch, seed=$seed, weight_decay=$weight_decay, batchnorm=$batchnorm, crop=$crop, flip=$flip, dropout=$dropout"
 
 # Define expected checkpoint path for conditional training
-ablation_name="${optimizer}_${batchnorm}_${augmentation}_${dropout}"
+ablation_name="${weight_decay}_${batchnorm}_${crop}_${flip}_${dropout}"
 checkpoint_file="checkpoints/${arch}_${ablation_name}_seed${seed}_final.pt"
 results_file="results/${arch}_${ablation_name}_seed${seed}_results.npz"
 
@@ -83,9 +84,10 @@ else
     python3.9 -u train_vgg_ablation.py \
         --arch "$arch" \
         --seed $seed \
-        --optimizer "$optimizer" \
+        --weight_decay_ablation "$weight_decay" \
         --batchnorm "$batchnorm" \
-        --augmentation "$augmentation" \
+        --random_crop "$crop" \
+        --random_flip "$flip" \
         --dropout "$dropout" \
         --epochs 500 \
         --batch_size 128 \
@@ -102,8 +104,8 @@ else
         --device cuda
 
     date
-    echo "Training completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation dropout=$dropout"
+    echo "Training completed: arch=$arch seed=$seed weight_decay=$weight_decay batchnorm=$batchnorm crop=$crop flip=$flip dropout=$dropout"
 fi
 
 date
-echo "Job completed: arch=$arch seed=$seed optimizer=$optimizer batchnorm=$batchnorm augmentation=$augmentation dropout=$dropout"
+echo "Job completed: arch=$arch seed=$seed weight_decay=$weight_decay batchnorm=$batchnorm crop=$crop flip=$flip dropout=$dropout"

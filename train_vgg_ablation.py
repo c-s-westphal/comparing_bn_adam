@@ -392,15 +392,12 @@ def main():
     parser.add_argument('--random_flip', type=str, required=True,
                         choices=['flip', 'no_flip'],
                         help='Whether to use random horizontal flip augmentation')
-    parser.add_argument('--dropout', type=str, required=True,
-                        choices=['dropout', 'no_dropout'],
-                        help='Whether to use dropout in classifier')
 
     # Training arguments
     parser.add_argument('--epochs', type=int, default=200,
                         help='Number of training epochs')
-    parser.add_argument('--batch_size', type=int, default=128,
-                        help='Training batch size')
+    parser.add_argument('--batch_size', type=int, required=True,
+                        help='Training batch size (ablation parameter)')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-4,
@@ -451,9 +448,8 @@ def main():
     use_batchnorm = (args.batchnorm == 'bn')
     use_random_crop = (args.random_crop == 'crop')
     use_random_flip = (args.random_flip == 'flip')
-    use_dropout = (args.dropout == 'dropout')
 
-    # Create model
+    # Create model (no dropout)
     model_map = {
         'vgg9': VGG9,
         'vgg11': VGG11,
@@ -461,14 +457,14 @@ def main():
         'vgg16': VGG16,
         'vgg19': VGG19
     }
-    model = model_map[args.arch](num_classes=10, use_batchnorm=use_batchnorm, use_dropout=use_dropout)
+    model = model_map[args.arch](num_classes=10, use_batchnorm=use_batchnorm, use_dropout=False)
     model = model.to(device)
 
     print(f"\nModel: {args.arch.upper()}")
     print(f"Batch Normalization: {use_batchnorm}")
     print(f"Random Crop: {use_random_crop}")
     print(f"Random Flip: {use_random_flip}")
-    print(f"Dropout: {use_dropout}")
+    print(f"Batch Size: {args.batch_size}")
     print(f"Weight Decay: {use_weight_decay}")
     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
@@ -601,7 +597,7 @@ def main():
     checkpoint_dir = Path(args.checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    ablation_name = f"{args.weight_decay_ablation}_{args.batchnorm}_{args.random_crop}_{args.random_flip}_{args.dropout}"
+    ablation_name = f"{args.weight_decay_ablation}_{args.batchnorm}_{args.random_crop}_{args.random_flip}_bs{args.batch_size}"
     checkpoint_path = checkpoint_dir / f"{args.arch}_{ablation_name}_seed{args.seed}_final.pt"
 
     torch.save({
@@ -613,7 +609,7 @@ def main():
         'use_batchnorm': use_batchnorm,
         'use_random_crop': use_random_crop,
         'use_random_flip': use_random_flip,
-        'use_dropout': use_dropout,
+        'batch_size': args.batch_size,
         'use_weight_decay': use_weight_decay,
         'train_acc': train_acc_history[-1] if train_acc_history else train_acc,
         'test_acc': test_acc_history[-1] if test_acc_history else test_acc,
@@ -646,7 +642,7 @@ def main():
         use_batchnorm=use_batchnorm,
         use_random_crop=use_random_crop,
         use_random_flip=use_random_flip,
-        use_dropout=use_dropout,
+        batch_size=args.batch_size,
         use_weight_decay=use_weight_decay,
     )
 
@@ -662,7 +658,7 @@ def main():
             'use_batchnorm': use_batchnorm,
             'use_random_crop': use_random_crop,
             'use_random_flip': use_random_flip,
-            'use_dropout': use_dropout,
+            'batch_size': args.batch_size,
             'epochs': args.epochs,
             'final_train_acc': float(train_acc),
             'final_test_acc': float(test_acc),

@@ -127,6 +127,11 @@ def load_results(results_dir: Path, architecture: str, min_train_acc: float = 0.
             filtered_count += 1
             continue
 
+        # Filter to only include high-accuracy runs (>99%)
+        if train_acc < 99.0:
+            filtered_count += 1
+            continue
+
         results[ablation_name].append({
             'gen_gap': gen_gap,
             'mi_diff': mi_diff,
@@ -155,7 +160,7 @@ def plot_mi_diff_vs_gen_gap(results, architecture: str, output_dir: Path, group_
         output_dir: Directory to save the plot
         group_by: Which dimension to use for primary grouping ('weight_decay', 'batchnorm', 'augmentation')
     """
-    fig, ax = plt.subplots(figsize=(16, 12))
+    fig, ax = plt.subplots(figsize=(20, 8))
 
     # Define colors for weight decay
     wd_colors = {
@@ -181,6 +186,10 @@ def plot_mi_diff_vs_gen_gap(results, architecture: str, output_dir: Path, group_
         'bs128': 150,       # Smaller for large batch
     }
 
+    # Collect all data points for trend line
+    all_gen_gaps = []
+    all_mi_diffs = []
+
     # Plot each ablation
     for ablation_name, data_points in sorted(results.items()):
         if not data_points:
@@ -189,6 +198,10 @@ def plot_mi_diff_vs_gen_gap(results, architecture: str, output_dir: Path, group_
         # Extract data
         gen_gaps = [d['gen_gap'] for d in data_points]
         mi_diffs = [d['mi_diff'] for d in data_points]
+
+        # Add to global lists for trend line
+        all_gen_gaps.extend(gen_gaps)
+        all_mi_diffs.extend(mi_diffs)
 
         # Get style parameters
         weight_decay = data_points[0]['weight_decay']
@@ -229,6 +242,24 @@ def plot_mi_diff_vs_gen_gap(results, architecture: str, output_dir: Path, group_
                   edgecolors='black', linewidths=1.5,
                   label=label)
 
+    # Add trend line
+    if len(all_gen_gaps) > 0:
+        # Fit linear regression
+        z = np.polyfit(all_gen_gaps, all_mi_diffs, 1)
+        p = np.poly1d(z)
+
+        # Calculate R²
+        y_pred = p(all_gen_gaps)
+        ss_res = np.sum((np.array(all_mi_diffs) - y_pred) ** 2)
+        ss_tot = np.sum((np.array(all_mi_diffs) - np.mean(all_mi_diffs)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot)
+
+        # Plot trend line
+        x_trend = np.linspace(min(all_gen_gaps), max(all_gen_gaps), 100)
+        y_trend = p(x_trend)
+        ax.plot(x_trend, y_trend, 'k--', linewidth=2, alpha=0.8,
+                label=f'Trend: y={z[0]:.4f}x+{z[1]:.4f}, R²={r_squared:.3f}')
+
     # Formatting
     ax.set_xlabel('Generalization Gap (%)', fontsize=14, fontweight='bold')
     ax.set_ylabel('MI_diff (MI_full - mean(MI_masked))', fontsize=14, fontweight='bold')
@@ -236,7 +267,7 @@ def plot_mi_diff_vs_gen_gap(results, architecture: str, output_dir: Path, group_
                 fontsize=16, fontweight='bold', pad=20)
 
     ax.grid(True, alpha=0.3, linestyle='--')
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9, ncol=2)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), fontsize=9, ncol=6, frameon=True)
 
     # Tight layout to prevent label cutoff
     plt.tight_layout()
@@ -398,7 +429,8 @@ def main():
     )
 
     parser.add_argument('--arch', type=str, default='vgg13',
-                       choices=['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19'],
+                       choices=['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19',
+                               'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110'],
                        help='Architecture to plot (default: vgg13)')
     parser.add_argument('--results_dir', type=str, default='./results',
                        help='Directory containing result files')

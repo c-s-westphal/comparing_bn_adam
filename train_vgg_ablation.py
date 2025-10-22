@@ -1,7 +1,7 @@
 """
-Training script for VGG ablation study with integrated MI evaluation.
+Training script for VGG and ResNet ablation study with integrated MI evaluation.
 
-Trains VGG models with various ablations (optimizer, batch norm, data augmentation)
+Trains VGG and ResNet models with various ablations (optimizer, batch norm, data augmentation)
 and evaluates mutual information at regular intervals.
 """
 
@@ -20,6 +20,7 @@ import numpy as np
 from sklearn.metrics import mutual_info_score
 
 from models.vgg_standard import VGG9, VGG11, VGG13, VGG16, VGG19
+from models.resnet_cifar import ResNet20, ResNet32, ResNet44, ResNet56, ResNet110
 
 
 def get_data_loaders(
@@ -370,11 +371,12 @@ def train_one_epoch(
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train VGG with ablations and MI evaluation')
+    parser = argparse.ArgumentParser(description='Train VGG/ResNet with ablations and MI evaluation')
 
     # Model arguments
     parser.add_argument('--arch', type=str, required=True,
-                        choices=['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19'],
+                        choices=['vgg9', 'vgg11', 'vgg13', 'vgg16', 'vgg19',
+                                'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110'],
                         help='Model architecture')
     parser.add_argument('--seed', type=int, required=True,
                         help='Random seed')
@@ -455,7 +457,12 @@ def main():
         'vgg11': VGG11,
         'vgg13': VGG13,
         'vgg16': VGG16,
-        'vgg19': VGG19
+        'vgg19': VGG19,
+        'resnet20': ResNet20,
+        'resnet32': ResNet32,
+        'resnet44': ResNet44,
+        'resnet56': ResNet56,
+        'resnet110': ResNet110
     }
     model = model_map[args.arch](num_classes=10, use_batchnorm=use_batchnorm, use_dropout=False)
     model = model.to(device)
